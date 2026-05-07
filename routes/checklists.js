@@ -56,9 +56,28 @@ router.delete("/:id", async (req, res) => {
 // Get checklist history (audits)
 router.get("/history", auth, isAdmin, async (req, res) => {
   try {
-    const records = await Audit.find()
-      .populate("userId", "name email")
-      .sort({ createdAt: -1 });
+    const { machineCode, dateFrom, dateTo } = req.query;
+    let query = {};
+    
+    if (machineCode) {
+      query.machineCode = machineCode;
+    }
+    
+    if (dateFrom || dateTo) {
+      query.auditDate = {};
+      if (dateFrom) {
+        const from = new Date(dateFrom);
+        from.setHours(0, 0, 0, 0);
+        query.auditDate.$gte = from;
+      }
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        query.auditDate.$lte = to;
+      }
+    }
+    
+    const records = await Audit.find(query).sort({ auditDate: -1, createdAt: -1 });
 
     res.json({ records });
   } catch (error) {
@@ -116,15 +135,34 @@ router.get("/:id/export-pdf", auth, isAdmin, async (req, res) => {
 // Export all audits as CSV
 router.get("/history/export-csv", auth, isAdmin, async (req, res) => {
   try {
-    const records = await Audit.find()
-      .populate("userId", "name")
-      .sort({ createdAt: -1 });
+    const { machineCode, dateFrom, dateTo } = req.query;
+    let query = {};
+    
+    if (machineCode) {
+      query.machineCode = machineCode;
+    }
+    
+    if (dateFrom || dateTo) {
+      query.auditDate = {};
+      if (dateFrom) {
+        const from = new Date(dateFrom);
+        from.setHours(0, 0, 0, 0);
+        query.auditDate.$gte = from;
+      }
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        query.auditDate.$lte = to;
+      }
+    }
+    
+    const records = await Audit.find(query).sort({ auditDate: -1, createdAt: -1 });
 
     let csv = 'Checklist Name,Module,Sub-Module,Machine Code,Filled By,Date,Status\n';
 
     records.forEach(record => {
       const date = new Date(record.auditDate || record.createdAt).toLocaleDateString();
-      csv += `"${record.checklistTitle}","${record.module}","${record.subModule}","${record.machineCode}","${record.userId?.name || 'Unknown'}","${date}","${record.status}"\n`;
+      csv += `"${record.checklistTitle}","${record.module}","${record.subModule}","${record.machineCode}","${record.userName}","${date}","${record.status}"\n`;
     });
 
     res.setHeader('Content-Type', 'text/csv');

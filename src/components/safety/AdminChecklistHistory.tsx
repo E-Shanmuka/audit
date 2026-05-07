@@ -11,19 +11,25 @@ import { format } from 'date-fns';
 interface ChecklistRecord {
   _id: string;
   checklistId: any;
+  checklistTitle: string;
   machineCode: string;
-  filledBy: any;
+  userName: string;
   createdAt: string;
+  auditDate: string;
   answers: any;
   status: string;
 }
 
 const AdminChecklistHistory: React.FC = () => {
-  const { currentUser } = useSafety();
+  const { currentUser, machines } = useSafety();
   const [records, setRecords] = useState<ChecklistRecord[]>([]);
   const [filteredRecords, setFilteredRecords] = useState<ChecklistRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [machineFilter, setMachineFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
 
   useEffect(() => {
     fetchChecklistRecords();
@@ -33,13 +39,30 @@ const AdminChecklistHistory: React.FC = () => {
     let filtered = records;
     if (searchTerm) {
       filtered = filtered.filter(r =>
-        r.checklistId?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.checklistTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.machineCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.filledBy?.name.toLowerCase().includes(searchTerm.toLowerCase())
+        r.userName.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+    
+    if (machineFilter) {
+      filtered = filtered.filter(r => r.machineCode === machineFilter);
+    }
+    
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      from.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(r => new Date(r.auditDate || r.createdAt) >= from);
+    }
+    
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(r => new Date(r.auditDate || r.createdAt) <= to);
+    }
+    
     setFilteredRecords(filtered);
-  }, [records, searchTerm]);
+  }, [records, searchTerm, machineFilter, dateFrom, dateTo]);
 
   const fetchChecklistRecords = async () => {
     try {
@@ -102,7 +125,12 @@ const AdminChecklistHistory: React.FC = () => {
 
   const downloadAllAsCSV = async () => {
     try {
-      const response = await fetch('/api/checklists/history/export-csv', {
+      const params = new URLSearchParams();
+      if (machineFilter) params.append('machineCode', machineFilter);
+      if (dateFrom) params.append('dateFrom', dateFrom);
+      if (dateTo) params.append('dateTo', dateTo);
+      
+      const response = await fetch(`/api/checklists/history/export-csv?${params}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('sms.token')}`,
         },
@@ -187,12 +215,12 @@ const AdminChecklistHistory: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2 flex-1">
-                    <h3 className="text-lg font-semibold">{record.checklistId?.name}</h3>
+                    <h3 className="text-lg font-semibold">{record.checklistTitle}</h3>
                     <p className="text-sm text-muted-foreground">
                       Machine: {record.machineCode}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Filled by: {record.filledBy?.name} • {format(new Date(record.createdAt), 'PPP p')}
+                      Filled by: {record.userName} • {format(new Date(record.auditDate || record.createdAt), 'PPP p')}
                     </p>
                   </div>
                   <Button

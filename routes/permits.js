@@ -280,8 +280,25 @@ router.get("/:id/pdf", auth, async (req, res) => {
 // Export permits as ZIP (admin)
 router.get("/admin/export-zip", auth, isAdmin, async (req, res) => {
   try {
-    const { status } = req.query;
-    const query = status ? { status } : {};
+    const { status, dateFrom, dateTo } = req.query;
+    const query = {};
+    
+    if (status) query.status = status;
+    
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) {
+        const from = new Date(dateFrom);
+        from.setHours(0, 0, 0, 0);
+        query.createdAt.$gte = from;
+      }
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = to;
+      }
+    }
+    
     const permits = await Permit.find(query).populate("templateId userId rejectedBy");
 
     if (permits.length === 0) {

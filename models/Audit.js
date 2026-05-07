@@ -22,6 +22,7 @@ const auditSchema = new Schema(
     userName: { type: String, required: true },
     answers: [answerSchema],
     status: { type: String, enum: ["completed", "has_issues"], default: "completed" },
+    shift: { type: String, default: "Morning (6AM-2PM)" },
     auditDate: { type: Date },
   },
   { timestamps: true }

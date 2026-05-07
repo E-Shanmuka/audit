@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
-import { Loader2, FileText, Plus, Edit, Copy, Trash2 } from 'lucide-react';
+import { Loader2, FileText, Plus, Edit, Copy, Trash2, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Template {
