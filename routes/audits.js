@@ -55,7 +55,7 @@ router.post("/create", async (req, res) => {
       userName,
       answers,
       status,
-      auditDate,
+      auditDate: new Date(), // Always use current date/time when audit is submitted
     });
 
     res.status(201).json(audit);
