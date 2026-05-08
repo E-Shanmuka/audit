@@ -15,7 +15,7 @@ interface Template {
   _id: string;
   name: string;
   sections: any[];
-  approvalFlow: string[];
+  approvalFlow: any[]; // can be string[] or Department[]
   createdBy: any;
   createdAt: string;
 }
@@ -301,7 +301,7 @@ const AdminPermitTemplates: React.FC = () => {
     setFormData({
       name: template.name,
       sections: template.sections,
-      approvalFlow: template.approvalFlow,
+      approvalFlow: template.approvalFlow.map((dept: any) => typeof dept === 'string' ? dept : dept._id),
     });
     setDialogOpen(true);
   };

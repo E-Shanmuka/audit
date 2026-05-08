@@ -108,7 +108,7 @@ router.get("/:id/export-pdf", auth, isAdmin, async (req, res) => {
     doc.fontSize(10).text(`Module: ${audit.module}`);
     doc.text(`Sub-Module: ${audit.subModule}`);
     doc.text(`Machine Code: ${audit.machineCode}`);
-    doc.text(`Filled by: ${audit.userId?.name || 'Unknown'}`);
+    doc.text(`Filled by: ${audit.userName || 'Unknown'}`);
     doc.text(`Date: ${new Date(audit.auditDate || audit.createdAt).toLocaleString()}`);
     doc.text(`Status: ${audit.status}`);
     doc.moveDown();

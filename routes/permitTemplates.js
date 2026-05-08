@@ -8,7 +8,10 @@ const router = express.Router();
 // Get all templates
 router.get("/", auth, async (req, res) => {
   try {
-    const templates = await PermitTemplate.find({ active: true }).populate("createdBy", "name").sort({ createdAt: -1 });
+    const templates = await PermitTemplate.find({ active: true })
+      .populate("createdBy", "name")
+      .populate("approvalFlow", "name")
+      .sort({ createdAt: -1 });
     res.json({ templates });
   } catch (error) {
     console.error(error);
