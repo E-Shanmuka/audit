@@ -18,46 +18,53 @@ const ScanMachine: React.FC = () => {
   const { currentUser, machines, modules, checklists, issues, tasks, audits } = useSafety();
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
   const [selectedChecklistId, setSelectedChecklistId] = useState<string>('');
-  const [scanMessage, setScanMessage] = useState('Request camera permission to begin scanning machine QR codes.');
+  const [scanMessage, setScanMessage] = useState('Initializing camera...');
   const [isScanning, setIsScanning] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
-  const requestCameraPermission = async () => {
-    try {
-      // Request camera permission explicitly
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "environment" } 
-      });
-      stream.getTracks().forEach(track => track.stop()); // Stop the test stream
-      setHasPermission(true);
-      setScanMessage('Permission granted. Click "Start Scanning" to begin.');
-    } catch (error) {
-      console.error('Camera permission denied:', error);
-      setScanMessage('Camera permission denied. Please allow camera access and try again.');
-    }
+  const stopScanner = async () => {
+    setIsScanning(false);
+    scannerRef.current?.clear().catch(console.error);
+    scannerRef.current = null;
   };
 
-  const startScanning = () => {
-    setIsScanning(true);
-    setScanMessage('Scanning for QR codes...');
-    scannerRef.current = new Html5QrcodeScanner('qr-reader', { 
-      fps: 10, 
-      qrbox: 250,
-      videoConstraints: {
-        facingMode: "environment" // Use back camera
+  const getPreferredVideoConstraints = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+      stream.getTracks().forEach(track => track.stop());
+      setHasPermission(true);
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter(device => device.kind === 'videoinput');
+      const backCamera = videoInputs.find(device => /back|rear|environment|wide|gopro/i.test(device.label));
+      if (backCamera) {
+        return { deviceId: { exact: backCamera.deviceId } };
       }
+      if (videoInputs.length > 0) {
+        return { deviceId: { exact: videoInputs[0].deviceId } };
+      }
+    } catch (error) {
+      console.warn('Could not determine preferred camera. Falling back to environment facingMode.', error);
+    }
+    return { facingMode: { ideal: 'environment' } };
+  };
+
+  const startScanning = async (videoConstraints: any) => {
+    setScanMessage('Scanning for QR codes...');
+    scannerRef.current = new Html5QrcodeScanner('qr-reader', {
+      fps: 10,
+      qrbox: 250,
+      videoConstraints,
     }, false);
+
     scannerRef.current.render(
       (decodedText: string) => {
         const machine = machines.find(m => m.name === decodedText || m.code === decodedText);
         if (machine) {
           setSelectedMachine(machine);
           setScanMessage(`Scanned machine: ${machine.name}`);
-          setIsScanning(false);
-          setHasPermission(false);
-          scannerRef.current?.clear().catch(console.error);
-          scannerRef.current = null;
+          stopScanner();
         } else {
           setScanMessage('Machine not found. Try another QR code.');
         }
@@ -66,17 +73,27 @@ const ScanMachine: React.FC = () => {
         console.warn('QR scan error', err);
       }
     );
+    setIsScanning(true);
   };
 
-  const stopScanning = () => {
-    setIsScanning(false);
-    setHasPermission(false);
-    scannerRef.current?.clear().catch(console.error);
-    scannerRef.current = null;
-    setScanMessage('Request camera permission to begin scanning machine QR codes.');
+  const initScanner = async () => {
+    try {
+      setScanMessage('Requesting camera permission...');
+      const constraints = await getPreferredVideoConstraints();
+      if (!constraints) {
+        throw new Error('No available video input devices');
+      }
+      setHasPermission(true);
+      await startScanning(constraints);
+    } catch (error) {
+      console.error('Camera init failed:', error);
+      setHasPermission(false);
+      setScanMessage('Camera access is required. Please allow permission and refresh this page.');
+    }
   };
 
   useEffect(() => {
+    initScanner();
     return () => {
       if (scannerRef.current) {
         scannerRef.current.clear().catch(console.error);
@@ -87,8 +104,7 @@ const ScanMachine: React.FC = () => {
 
   useEffect(() => {
     if (selectedMachine) {
-      setIsScanning(false);
-      setHasPermission(false);
+      stopScanner();
     }
   }, [selectedMachine]);
 
@@ -138,30 +154,14 @@ const ScanMachine: React.FC = () => {
         <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
           <div className="text-sm font-semibold text-slate-700 mb-3">Live Scanner</div>
           <div className="rounded-3xl overflow-hidden border border-slate-200 mb-4">
-            <div id="qr-reader" style={{ width: '100%', minHeight: isScanning ? '300px' : '0' }} />
+            <div id="qr-reader" style={{ width: '100%', minHeight: '320px' }} />
           </div>
-          {!hasPermission && !isScanning && (
-            <button 
-              onClick={requestCameraPermission} 
+          {!isScanning && (
+            <button
+              onClick={initScanner}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
             >
-              Request Camera Permission
-            </button>
-          )}
-          {hasPermission && !isScanning && (
-            <button 
-              onClick={startScanning} 
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              Start Scanning
-            </button>
-          )}
-          {isScanning && (
-            <button 
-              onClick={stopScanning} 
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              Stop Scanning
+              Retry Camera Scan
             </button>
           )}
           <div className="text-sm text-slate-600 mt-3">{scanMessage}</div>
