@@ -9,7 +9,7 @@ const UserTasks: React.FC = () => {
 
   if (!currentUser) return null;
 
-  const allTasks = tasks.filter(t => t.status !== 'completed');
+  const allTasks = tasks.filter(t => t.status !== 'completed' && t.assignedTo === currentUser.id);
 
   const startFromTask = (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);

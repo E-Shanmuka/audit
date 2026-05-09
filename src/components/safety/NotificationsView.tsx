@@ -1,9 +1,10 @@
 import React from 'react';
 import { useSafety } from '@/contexts/SafetyContext';
+import { toast } from '@/components/ui/use-toast';
 import { Bell, CheckCircle2, AlertTriangle, Info, AlertCircle } from 'lucide-react';
 
 const NotificationsView: React.FC = () => {
-  const { notifications, currentUser, markNotificationRead } = useSafety();
+  const { notifications, currentUser, markNotificationRead, clearNotifications } = useSafety();
   if (!currentUser) return null;
 
   const myNotifs = notifications.filter(n => n.userId === currentUser.id);
@@ -37,7 +38,10 @@ const NotificationsView: React.FC = () => {
             <p className="text-xs text-slate-500">{myNotifs.filter(n => !n.read).length} unread of {myNotifs.length}</p>
           </div>
         </div>
-        <button onClick={() => myNotifs.filter(n => !n.read).forEach(n => markNotificationRead(n.id))} className="text-xs font-semibold text-[#1e3a5f] hover:underline">Mark all read</button>
+        <div className="flex gap-3">
+          <button onClick={() => myNotifs.filter(n => !n.read).forEach(n => markNotificationRead(n.id))} className="text-xs font-semibold text-[#1e3a5f] hover:underline">Mark all read</button>
+          <button onClick={() => { if (confirm('Clear all notifications permanently?')) { clearNotifications(); } }} className="text-xs font-semibold text-red-600 hover:underline">Clear all</button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">

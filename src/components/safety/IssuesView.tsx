@@ -17,7 +17,7 @@ const IssuesView: React.FC = () => {
   };
   const [form, setForm] = useState(blank);
 
-  const list = issues;
+  const list = issues.filter(i => i.title && !i.title.toLowerCase().includes('demo') && !i.title.toLowerCase().includes('test'));
 
   const filtered = list.filter(i =>
     (statusFilter === 'all' || i.status === statusFilter) &&

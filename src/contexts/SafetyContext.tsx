@@ -247,6 +247,7 @@ interface SafetyContextType {
 
   markNotificationRead: (id: string) => Promise<void>;
   addNotification: (n: Omit<Notification, 'id' | 'createdAt'>) => Promise<void>;
+  clearNotifications: () => Promise<void>;
   addAlertRule: (r: Omit<AlertRule, 'id' | 'createdAt'>) => Promise<void>;
   updateAlertRule: (id: string, r: Partial<AlertRule>) => Promise<void>;
   deleteAlertRule: (id: string) => Promise<void>;
@@ -1159,6 +1160,18 @@ export const SafetyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setNotifications(p => p.map(x => x.id === id ? mapNotification(json.notification) : x));
     } catch (e) { handleError('Mark read', e); }
   };
+  const clearNotifications = async () => {
+    try {
+      const response = await fetch(`/api/notifications/clear`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.message || 'Failed to clear notifications');
+      setNotifications([]);
+      toast({ title: 'Cleared', description: `${json.deletedCount || 0} notifications deleted permanently.` });
+    } catch (e) { handleError('Clear notifications', e); }
+  };
 
   const addAlertRule = async (r: Omit<AlertRule, 'id' | 'createdAt'>) => {
     try {
@@ -1242,7 +1255,7 @@ export const SafetyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       addChecklist, updateChecklist, deleteChecklist, toggleChecklist,
       addAudit, getAuditsByFilter, addTask, updateTask, deleteTask,
       addIssue, updateIssue, deleteIssue,
-      markNotificationRead, addNotification, addAlertRule, updateAlertRule, deleteAlertRule,
+      markNotificationRead, addNotification, clearNotifications, addAlertRule, updateAlertRule, deleteAlertRule,
     }}>
       {children}
     </SafetyContext.Provider>

@@ -4,7 +4,8 @@ const { Schema } = mongoose;
 
 const notificationSchema = new Schema(
   {
-    userId: { type: String, required: true, trim: true },
+    userId: { type: String, trim: true },
+    departmentId: { type: Schema.Types.ObjectId, ref: "Department" },
     title: { type: String, required: true, trim: true },
     message: { type: String, required: true, trim: true },
     type: { type: String, required: true, trim: true },

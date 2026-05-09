@@ -70,35 +70,22 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const requestCount = audits.length;
-  const approvedCount = tasks.filter(t => t.status === 'completed').length;
-  const extendedCount = tasks.filter(t => t.status === 'in_progress').length;
-  const closedCount = issues.filter(i => i.status === 'closed').length;
-  const waitingCount = issues.filter(i => i.status === 'open').length;
-  const expiredCount = tasks.filter(t => {
-    if (!t.dueDate) return false;
-    const due = new Date(t.dueDate);
-    return due < new Date() && t.status !== 'completed';
-  }).length;
-  const criticalCount = issues.filter(i => i.severity === 'critical').length;
-  const issueRaisedCount = issues.length;
-  const overdueIssuesCount = issues.filter(i => {
-    if (!i.dueDate) return false;
-    const due = new Date(i.dueDate);
-    return due < new Date() && i.status !== 'resolved' && i.status !== 'closed';
-  }).length;
+  const machineCount = machines.length;
+  const issueCount = issues.filter(i => i.title && !i.title.toLowerCase().includes('demo') && !i.title.toLowerCase().includes('test')).length;
+  const openIssuesCount = issues.filter(i => i.status === 'open' && i.title && !i.title.toLowerCase().includes('demo') && !i.title.toLowerCase().includes('test')).length;
+  const solvedIssuesCount = issues.filter(i => i.status === 'resolved' && i.title && !i.title.toLowerCase().includes('demo') && !i.title.toLowerCase().includes('test')).length;
+  const expiredIssuesCount = issues.filter(i => i.status === 'closed' && i.title && !i.title.toLowerCase().includes('demo') && !i.title.toLowerCase().includes('test')).length;
+  const permitCount = tasks.length;
+  const departmentCount = new Set(machines.map(m => m.department)).size;
 
   const stats = [
-    { label: 'Requested', value: requestCount },
-    { label: 'Approved', value: approvedCount },
-    { label: 'Extended', value: extendedCount },
-    { label: 'Closed', value: closedCount },
-    { label: 'Cancelled', value: 0 },
-    { label: 'WaitingForApproval', value: waitingCount },
-    { label: 'Expired', value: expiredCount },
-    { label: 'OverduePermits', value: criticalCount },
-    { label: 'Issues Raised', value: issueRaisedCount },
-    { label: 'Overdue Issues', value: overdueIssuesCount },
+    { label: 'Machines', value: machineCount, key: 'machines' },
+    { label: 'All Issues', value: issueCount, key: 'issues' },
+    { label: 'Open Issues', value: openIssuesCount, key: 'issues' },
+    { label: 'Solved Issues', value: solvedIssuesCount, key: 'issues' },
+    { label: 'Expired Issues', value: expiredIssuesCount, key: 'issues' },
+    { label: 'Permits', value: permitCount, key: 'permits' },
+    { label: 'Departments', value: departmentCount, key: 'departments' },
   ];
 
   return (
@@ -115,14 +102,12 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
         {stats.map(stat => (
           <button key={stat.label} onClick={() => {
-            if (stat.label === 'Issues Raised' || stat.label === 'Overdue Issues') {
+            if (stat.key === 'issues') {
               setActiveView('issues');
-            } else if (stat.label === 'Requested' || stat.label === 'Approved' || stat.label === 'Extended') {
+            } else if (stat.key === 'permits') {
               setActiveView('my-tasks');
-            } else if (stat.label === 'Expired' || stat.label === 'OverduePermits') {
-              setActiveView('audit-history');
             }
-          }} className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition text-left">
+          }} className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition text-left cursor-pointer">
             <div className="text-xs uppercase tracking-[0.25em] text-slate-400 mb-4">{stat.label}</div>
             <div className="text-4xl font-bold text-slate-900">{stat.value}</div>
           </button>

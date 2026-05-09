@@ -64,12 +64,10 @@ router.post("/", auth, async (req, res) => {
       const firstDept = await Department.findById(template.approvalFlow[0]);
       if (firstDept) {
         await Notification.create({
-          userId: null, // department notification
           departmentId: firstDept._id,
           title: "New Permit Request",
           message: `New permit ${permitNumber} requires approval.`,
           type: "permit",
-          data: { permitId: permit._id },
         });
       }
     }
@@ -126,12 +124,10 @@ router.post("/:id/approve", auth, async (req, res) => {
       const nextDept = await Department.findById(permit.templateId.approvalFlow[nextIndex]);
       if (nextDept) {
         await Notification.create({
-          userId: null,
           departmentId: nextDept._id,
           title: "Permit Approval Pending",
           message: `Permit ${permit.permitNumber} requires your approval.`,
           type: "permit",
-          data: { permitId: permit._id },
         });
       }
     }
