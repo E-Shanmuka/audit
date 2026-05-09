@@ -20,9 +20,7 @@ import {
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
-  const { currentUser, activeView, setActiveView, selectedSubmodule, setSelectedSubmodule, logout, sidebarOpen, toggleSidebar } = useSafety();
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
+  const { currentUser, activeView, setActiveView, logout, sidebarOpen, toggleSidebar } = useSafety();
 
   if (!currentUser) return null;
 
@@ -53,33 +51,7 @@ const Sidebar: React.FC = () => {
     }
   });
 
-  const myTasksModules = [
-    {
-      id: 'ehs-audit',
-      label: 'EHS Audit',
-      submodules: [
-        { id: 'machine-audit', label: 'Machine Audit' },
-        { id: 'wulo-audit', label: 'Wulo Audit' },
-        { id: 'forklift-audit', label: 'Forklift Audit' },
-      ],
-    },
-    {
-      id: 'jsa',
-      label: 'JSA',
-      submodules: [
-        { id: 'job-safety-audit', label: 'Job Safety Audit' },
-        { id: 'task-risk-assessment', label: 'Task Risk Assessment' },
-      ],
-    },
-    {
-      id: 'tpis',
-      label: 'TPI’s',
-      submodules: [
-        { id: 'safety-observation', label: 'Safety Observation' },
-        { id: 'safety-violation', label: 'Safety Violations' },
-      ],
-    },
-  ];
+  const myTasksModules = [];
 
   const permitsModules = [
     { id: 'create-permit', label: 'Create Permit' },
@@ -90,29 +62,6 @@ const Sidebar: React.FC = () => {
 
   const handleTopNavClick = (id: string) => {
     setActiveView(id);
-    setOpenMenu(null);
-    setOpenSubMenu(null);
-    if (window.innerWidth < 1024) toggleSidebar();
-  };
-
-  const handleMenuToggle = (id: string) => {
-    setOpenMenu(openMenu === id ? null : id);
-    setOpenSubMenu(null);
-    if (id === 'my-tasks' && openMenu !== id) {
-      setSelectedSubmodule(null);
-      setActiveView('my-tasks');
-    }
-  };
-
-  const handleSubmenuToggle = (id: string) => {
-    setOpenSubMenu(openSubMenu === id ? null : id);
-  };
-
-  const handleSubmoduleClick = (subId: string, subLabel: string) => {
-    setActiveView('my-tasks');
-    setSelectedSubmodule(subLabel);
-    setOpenMenu(null);
-    setOpenSubMenu(null);
     if (window.innerWidth < 1024) toggleSidebar();
   };
 
@@ -157,46 +106,13 @@ const Sidebar: React.FC = () => {
           <div className="mt-4 px-3 text-[10px] font-bold text-blue-300/70 uppercase tracking-wider mb-2">My Tasks</div>
           <div className="menu-item">
             <button
-              onClick={() => handleMenuToggle('my-tasks')}
-              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${openMenu === 'my-tasks' ? 'bg-orange-500 text-white shadow-lg' : 'text-blue-100 hover:bg-white/5'}`}
+              onClick={() => handleTopNavClick('my-tasks')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeView === 'my-tasks' ? 'bg-orange-500 text-white shadow-lg' : 'text-blue-100 hover:bg-white/5'}`}
             >
-              <span className="inline-flex items-center gap-3">
-                <ClipboardList className="w-4 h-4" />
-                <span>My Tasks</span>
-              </span>
-              {openMenu === 'my-tasks' ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              <ClipboardList className="w-4 h-4" />
+              <span className="flex-1 text-left">My Tasks</span>
+              {activeView === 'my-tasks' && <ChevronRight className="w-4 h-4" />}
             </button>
-            <ul className={`submenu mt-1 space-y-1 ${openMenu === 'my-tasks' ? 'block' : 'hidden'}`}>
-              {myTasksModules.map(module => {
-                const moduleOpen = openSubMenu === module.id;
-                return (
-                  <li key={module.id} className={`submenu-item ${moduleOpen ? 'open' : ''}`}>
-                    <button
-                      onClick={() => handleSubmenuToggle(module.id)}
-                      className={`w-full flex items-center justify-between gap-3 px-4 py-2 rounded-lg text-sm font-medium transition ${moduleOpen ? 'bg-white/10 text-white' : 'text-blue-100 hover:bg-white/5'}`}
-                    >
-                      <span>{module.label}</span>
-                      {moduleOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                    </button>
-                    <ul className={`nested-submenu mt-1 space-y-1 ${moduleOpen ? 'block' : 'hidden'}`}>
-                      {module.submodules.map(sub => {
-                        const activeSub = activeView === sub.id;
-                        return (
-                          <li key={sub.id}>
-                            <button
-                              onClick={() => handleSubmoduleClick(sub.id, sub.label)}
-                              className={`w-full text-left px-5 py-2 rounded-lg text-sm transition ${activeSub ? 'bg-orange-500 text-white' : 'text-blue-100 hover:bg-white/5'}`}
-                            >
-                              {sub.label}
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </li>
-                );
-              })}
-            </ul>
           </div>
 
           <div className="mt-4 px-3 text-[10px] font-bold text-blue-300/70 uppercase tracking-wider mb-2">Permits</div>
