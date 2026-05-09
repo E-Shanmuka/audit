@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSafety, Answer } from '@/contexts/SafetyContext';
-import { CheckCircle2, XCircle, ArrowLeft, Send, AlertCircle, ClipboardCheck, Calendar } from 'lucide-react';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CheckCircle2, XCircle, ArrowLeft, Send, AlertCircle, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const AuditFlow: React.FC<{ checklistId: string; machineCode?: string; onDone: () => void; onBack: () => void }> = ({ checklistId, machineCode: propMachineCode, onDone, onBack }) => {
@@ -13,9 +11,20 @@ const AuditFlow: React.FC<{ checklistId: string; machineCode?: string; onDone: (
   const [auditDate, setAuditDate] = useState('');
   const [answers, setAnswers] = useState<Record<string, { answer: string; remark: string }>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
   const [isDateLocked, setIsDateLocked] = useState(false);
   const [loadedAuditExists, setLoadedAuditExists] = useState(false);
+
+  const parseDateInput = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const loadPrevious = async () => {
     if (!currentUser || !machineCode || !auditDate) return;
@@ -27,8 +36,7 @@ const AuditFlow: React.FC<{ checklistId: string; machineCode?: string; onDone: (
     });
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const selected = new Date(auditDate);
-    selected.setHours(0, 0, 0, 0);
+    const selected = parseDateInput(auditDate);
     const pastDate = selected < today;
 
     if (audits.length > 0) {
@@ -56,8 +64,8 @@ const AuditFlow: React.FC<{ checklistId: string; machineCode?: string; onDone: (
     else if (hour >= 14 && hour < 22) setShift('afternoon');
     else setShift('night');
 
-    // Auto-set audit date to today
-    setAuditDate(now.toISOString().split('T')[0]);
+    // Auto-set audit date to today using local date values
+    setAuditDate(formatDateForInput(now));
   }, []);
 
   useEffect(() => {
@@ -77,8 +85,7 @@ const AuditFlow: React.FC<{ checklistId: string; machineCode?: string; onDone: (
     e.preventDefault();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const selected = new Date(auditDate);
-    selected.setHours(0, 0, 0, 0);
+    const selected = parseDateInput(auditDate);
 
     if (!machineCode) { alert('Please select a machine'); return; }
     if (selected > today) { alert('Future audit dates are not allowed.'); return; }
@@ -186,36 +193,13 @@ const AuditFlow: React.FC<{ checklistId: string; machineCode?: string; onDone: (
           </div>
           <div className="bg-white rounded-xl p-5 border border-slate-200">
             <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Audit Date</label>
-            <div className="flex gap-2 mt-2">
-              <input
-                type="date"
-                value={auditDate}
-                max={new Date().toISOString().split('T')[0]}
-                onChange={e => setAuditDate(e.target.value)}
-                className="flex-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm"
-              />
-              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Calendar className="w-4 h-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <CalendarComponent
-                    mode="single"
-                    selected={auditDate ? new Date(auditDate) : undefined}
-                    disabled={{ after: new Date() }}
-                    onSelect={(date) => {
-                      if (date) {
-                        setAuditDate(date.toISOString().split('T')[0]);
-                        setCalendarOpen(false);
-                      }
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <input
+              type="date"
+              value={auditDate}
+              max={formatDateForInput(new Date())}
+              onChange={e => setAuditDate(e.target.value)}
+              className="w-full mt-2 px-3 py-2.5 border border-slate-200 rounded-lg text-sm"
+            />
             {isDateLocked && (
               <div className="mt-2 text-xs text-orange-600">Past audit dates are view-only; answers cannot be edited.</div>
             )}

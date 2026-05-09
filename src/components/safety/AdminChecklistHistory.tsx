@@ -224,7 +224,7 @@ const AdminChecklistHistory: React.FC = () => {
                     </p>
                   </div>
                   <Button
-                    onClick={() => downloadChecklistPdf(record._id, record.checklistId?.name)}
+                    onClick={() => downloadChecklistPdf(record._id, record.checklistTitle || String(record.checklistId))}
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download PDF
